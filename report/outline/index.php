@@ -137,6 +137,8 @@ if ($showlastaccess) {
     $outlinetable->head[] = $strlast;
 }
 
+\core\session\manager::write_close();
+
 $modinfo = get_fast_modinfo($course);
 
 // If using legacy log then get users from old table.
