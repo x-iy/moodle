@@ -30,6 +30,8 @@ require_once(__DIR__ . '/../../config.php');
 require_once($CFG->dirroot . '/mod/quiz/locallib.php');
 require_once($CFG->dirroot . '/mod/quiz/report/reportlib.php');
 
+\core\session\manager::write_close();
+
 $id = optional_param('id', 0, PARAM_INT);
 $q = optional_param('q', 0, PARAM_INT);
 $mode = optional_param('mode', '', PARAM_ALPHA);
