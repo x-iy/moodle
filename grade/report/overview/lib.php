@@ -69,14 +69,17 @@ class grade_report_overview extends grade_report {
      * @param string $context
      */
     public function __construct($userid, $gpr, $context) {
-        global $CFG, $COURSE, $DB;
+        global $CFG, $COURSE, $DB, $USER;
         parent::__construct($COURSE->id, $gpr, $context);
 
         // Get the user (for full name).
         $this->user = $DB->get_record('user', array('id' => $userid));
 
+        // Set onlyactive flag to true if the user's viewing his/her report.
+        $onlyactive = ($this->user->id === $USER->id);
+
         // Load the user's courses.
-        $this->courses = enrol_get_users_courses($this->user->id, false, 'id, shortname, showgrades');
+        $this->courses = enrol_get_users_courses($this->user->id, $onlyactive, 'id, shortname, showgrades');
 
         $this->showrank = array();
         $this->showrank['any'] = false;
@@ -151,13 +154,13 @@ class grade_report_overview extends grade_report {
         // setting up table headers
         if ($this->showrank['any']) {
             $tablecolumns = array('coursename', 'grade', 'rank');
-            $tableheaders = array(grade_helper::get_lang_string('coursename', 'grades'),
-                grade_helper::get_lang_string('gradenoun'),
-                grade_helper::get_lang_string('rank', 'grades'));
+            $tableheaders = array(get_string('coursename', 'grades'),
+                get_string('gradenoun'),
+                get_string('rank', 'grades'));
         } else {
             $tablecolumns = array('coursename', 'grade');
-            $tableheaders = array(grade_helper::get_lang_string('coursename', 'grades'),
-                grade_helper::get_lang_string('gradenoun'));
+            $tableheaders = array(get_string('coursename', 'grades'),
+                get_string('gradenoun'));
         }
         $this->table = new flexible_table('grade-report-overview-'.$this->user->id);
 

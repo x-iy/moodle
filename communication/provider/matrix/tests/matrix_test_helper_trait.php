@@ -16,6 +16,9 @@
 
 namespace communication_matrix;
 
+use core\context;
+use GuzzleHttp\Psr7\Response;
+
 /**
  * Trait matrix_helper_trait to generate initial setup for matrix mock and associated helpers.
  *
@@ -24,7 +27,6 @@ namespace communication_matrix;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 trait matrix_test_helper_trait {
-
     /**
      * @var string $accesstoken The token for matrix connection
      */
@@ -44,7 +46,7 @@ trait matrix_test_helper_trait {
         $this->matrixhomeserverurl = TEST_COMMUNICATION_MATRIX_MOCK_SERVER;
         set_config('matrixhomeserverurl', $this->matrixhomeserverurl, 'communication_matrix');
         $request = $this->request();
-        $response = $request->post($this->matrixhomeserverurl. '/backoffice/create-admin');
+        $response = $request->post($this->matrixhomeserverurl . '/backoffice/create-admin');
         $admindata = json_decode($response->getBody());
         $json = [
             'identifier' => [
@@ -55,7 +57,7 @@ trait matrix_test_helper_trait {
             'password' => $admindata->password,
         ];
         $request = $this->request($json);
-        $response = $request->post($this->matrixhomeserverurl. '/_matrix/client/r0/login');
+        $response = $request->post($this->matrixhomeserverurl . '/_matrix/client/r0/login');
         $response = json_decode($response->getBody());
         if (empty($response->access_token)) {
             $this->markTestSkipped(
@@ -112,9 +114,12 @@ trait matrix_test_helper_trait {
      * @return \stdClass
      */
     public function get_matrix_room_data(string $roomid): \stdClass {
-        $matrixeventmanager = new matrix_events_manager($roomid);
-        $response = $matrixeventmanager->request()->get($matrixeventmanager->get_room_info_endpoint());
-        return json_decode($response->getBody(), false, 512, JSON_THROW_ON_ERROR);
+        $rooms = $this->backoffice_get_all_rooms();
+        foreach ($rooms as $room) {
+            if ($room->room_id === $roomid) {
+                return $room;
+            }
+        }
     }
 
     /**
@@ -125,9 +130,46 @@ trait matrix_test_helper_trait {
      * @return \stdClass
      */
     public function get_matrix_user_data(string $roomid, string $matrixuserid): \stdClass {
-        $matrixeventmanager = new matrix_events_manager($roomid);
-        $response = $matrixeventmanager->request()->get($matrixeventmanager->get_user_info_endpoint($matrixuserid));
-        return json_decode($response->getBody(), false, 512, JSON_THROW_ON_ERROR);
+        $users = $this->backoffice_get_all_users();
+
+        foreach ($users as $user) {
+            if ($user->userid === $matrixuserid) {
+                return $user;
+            }
+        }
+    }
+
+    /**
+     * A backoffice call to get all registered users from our mock server.
+     *
+     * @return array
+     */
+    public function backoffice_get_all_users(): array {
+        $client = new \core\http_client();
+
+        return json_decode($client->get($this->get_backoffice_uri('users'))->getBody())->users;
+    }
+
+    /**
+     * A backoffice method to create users and rooms on our mock server.
+     *
+     * @param array $users
+     * @param array $rooms
+     */
+    public function backoffice_create_users_and_rooms(
+        array $users = [],
+        array $rooms = [],
+    ): Response {
+        $client = new \core\http_client();
+        return $client->put(
+            $this->get_backoffice_uri('create'),
+            [
+                'json' => [
+                    'users' => $users,
+                    'rooms' => $rooms,
+                ],
+            ],
+        );
     }
 
     /**
@@ -138,7 +180,7 @@ trait matrix_test_helper_trait {
      * @return \core\http_client
      */
     public function request(array $jsonarray = [], array $headers = []): \core\http_client {
-        $response = new  \core\http_client([
+        $response = new \core\http_client([
             'headers' => $headers,
             'json' => $jsonarray,
         ]);
@@ -188,7 +230,7 @@ trait matrix_test_helper_trait {
     public function reset_mock(): void {
         if (defined('TEST_COMMUNICATION_MATRIX_MOCK_SERVER')) {
             $request = $this->request();
-            $response = $request->post(TEST_COMMUNICATION_MATRIX_MOCK_SERVER. '/backoffice/reset');
+            $response = $request->post(TEST_COMMUNICATION_MATRIX_MOCK_SERVER . '/backoffice/reset');
             $response = json_decode($response->getBody());
             if (empty($response->reset)) {
                 $this->markTestSkipped(
@@ -211,23 +253,26 @@ trait matrix_test_helper_trait {
      * @return api
      */
     protected function create_matrix_room(
-        ?string $component = 'communication_matrix',
+        ?string $component = 'core_course',
         ?string $itemtype = 'example',
         ?int $itemid = 1,
         ?string $roomname = null,
         ?string $roomtopic = null,
         ?\stored_file $roomavatar = null,
         array $members = [],
+        ?context $context = null,
     ): \core_communication\api {
+        $context = $context ?? \core\context\system::instance();
         // Create a new room.
         $communication = \core_communication\api::load_by_instance(
+            context: $context,
             component: $component,
             instancetype: $itemtype,
             instanceid: $itemid,
+            provider: 'communication_matrix',
         );
 
         $communication->create_and_configure_room(
-            selectedcommunication: 'communication_matrix',
             communicationroomname: $roomname ?? 'Room name',
             avatar: $roomavatar,
             instance: (object) [
@@ -241,6 +286,7 @@ trait matrix_test_helper_trait {
         $this->run_all_adhoc_tasks();
 
         return \core_communication\api::load_by_instance(
+            context: $context,
             component: $component,
             instancetype: $itemtype,
             instanceid: $itemid,

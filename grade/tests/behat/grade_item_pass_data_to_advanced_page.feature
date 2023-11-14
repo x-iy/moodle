@@ -1,4 +1,4 @@
-@core @core_grades @javascript
+@core @core_grades @javascript @testtt
 Feature: We carry over data from modal to advanced grade item settings
   In order to setup grade items quickly
   As an teacher
@@ -35,7 +35,7 @@ Feature: We carry over data from modal to advanced grade item settings
     And I log out
     And I am on the "Course 1" course page logged in as teacher1
     And I navigate to "Setup > Gradebook setup" in the course gradebook
-    And I press "Add grade item"
+    And I choose the "Add grade item" item in the "Add" action menu
 
   Scenario: Defaults are used when creating a new grade item
     Given I click on "Show more..." "link" in the ".modal-dialog" "css_element"
@@ -48,7 +48,7 @@ Feature: We carry over data from modal to advanced grade item settings
       | Grade category    | Course 1 |
     And I press "Cancel"
     And I wait until the page is ready
-    And I press "Add category"
+    And I choose the "Add category" item in the "Add" action menu
     And I click on "Show more..." "link" in the ".modal-dialog" "css_element"
     And the following fields match these values:
       | Category name                |          |
@@ -58,7 +58,7 @@ Feature: We carry over data from modal to advanced grade item settings
       | Parent category              | Course 1 |
     And I press "Cancel"
     And I wait until the page is ready
-    And I press "Add outcome item"
+    And I choose the "Add outcome item" item in the "Add" action menu
     And I click on "Show more..." "link" in the ".modal-dialog" "css_element"
     And the following fields match these values:
       | Item name         |                          |
@@ -84,7 +84,7 @@ Feature: We carry over data from modal to advanced grade item settings
       | Grade category    | Some cool grade category |
     And I press "Cancel"
     And I wait until the page is ready
-    And I press "Add category"
+    And I choose the "Add category" item in the "Add" action menu
     And I set the following fields to these values:
       | Category name                | Category 1               |
       | Aggregation                  | Mean of grades           |
@@ -103,8 +103,27 @@ Feature: We carry over data from modal to advanced grade item settings
       | grade_item_aggregationcoef2  | 100                      |
       | Parent category              | Some cool grade category |
     And I press "Cancel"
+    And I choose the "Add category" item in the "Add" action menu
+    # Confirm that the form values are carried over even if some mandatory fields are missing (e.g. Category name).
+    And I set the following fields to these values:
+      | Aggregation                  | Mean of grades           |
+      | Minimum grade                | 1                        |
+      | Maximum grade                | 99                       |
+      | Weight adjusted              | 1                        |
+      | grade_item_aggregationcoef2  | 100                      |
+      | Parent category              | Some cool grade category |
+    And I click on "Show more..." "link" in the ".modal-dialog" "css_element"
+    And the following fields match these values:
+      | Category name                |                          |
+      | Aggregation                  | Mean of grades           |
+      | Minimum grade                | 1                        |
+      | Maximum grade                | 99                       |
+      | Weight adjusted              | 1                        |
+      | grade_item_aggregationcoef2  | 100                      |
+      | Parent category              | Some cool grade category |
+    And I press "Cancel"
     And I wait until the page is ready
-    And I press "Add outcome item"
+    And I choose the "Add outcome item" item in the "Add" action menu
     And I set the following fields to these values:
       | Item name         | Outcome item 1           |
       | Outcome           | Outcome 2                |

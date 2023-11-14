@@ -33,11 +33,15 @@ class course_external_tools_list extends system_report {
     /** @var \stdClass the course to constrain the report to. */
     protected \stdClass $course;
 
+    /** @var int the usage count for the tool represented in a row, and set by row_callback(). */
+    protected int $perrowtoolusage = 0;
+
     /**
      * Initialise report, we need to set the main table, load our entities and set columns/filters
      */
     protected function initialise(): void {
-        global $DB;
+        global $DB, $CFG;
+        require_once($CFG->dirroot . '/mod/lti/locallib.php');
 
         $this->course = get_course($this->get_context()->instanceid);
 
@@ -53,15 +57,38 @@ class course_external_tools_list extends system_report {
         $this->add_filters();
         $this->add_actions();
 
-        // We need id and course in the actions, without entity prefixes, so add these here.
-        $this->add_base_fields("{$entitymainalias}.id, {$entitymainalias}.course");
+        // We need id and course in the actions column, without entity prefixes, so add these here.
+        // We also need access to the tool usage count in a few places (the usage column as well as the actions column).
+        $ti = database::generate_param_name(); // Tool instance param.
+        $this->add_base_fields("{$entitymainalias}.id, {$entitymainalias}.course, ".
+            "(SELECT COUNT($ti.id)
+                FROM {lti} $ti
+                WHERE $ti.typeid = {$entitymainalias}.id) AS toolusage");
 
-        // Scope the report to the course context only.
+        // Join the types_categories table, to include only tools available to the current course's category.
+        $cattablealias = database::generate_alias();
+        $joinsql = "LEFT JOIN {lti_types_categories} {$cattablealias}
+                           ON ({$cattablealias}.typeid = {$entitymainalias}.id)";
+        $this->add_join($joinsql);
+
+        // Scope the report to the course context and include only those tools available to the category.
         $paramprefix = database::generate_param_name();
         $coursevisibleparam = database::generate_param_name();
+        $categoryparam = database::generate_param_name();
+        $toolstateparam = database::generate_param_name();
         [$insql, $params] = $DB->get_in_or_equal([get_site()->id, $this->course->id], SQL_PARAMS_NAMED, "{$paramprefix}_");
-        $wheresql = "{$entitymainalias}.course {$insql} AND {$entitymainalias}.coursevisible NOT IN (:{$coursevisibleparam})";
-        $params = array_merge($params, [$coursevisibleparam => 0]);
+        $wheresql = "{$entitymainalias}.course {$insql} ".
+            "AND {$entitymainalias}.coursevisible NOT IN (:{$coursevisibleparam}) ".
+            "AND ({$cattablealias}.id IS NULL OR {$cattablealias}.categoryid = :{$categoryparam}) ".
+            "AND {$entitymainalias}.state = :{$toolstateparam}";
+        $params = array_merge(
+            $params,
+            [
+                $coursevisibleparam => LTI_COURSEVISIBLE_NO,
+                $categoryparam => $this->course->category,
+                $toolstateparam => LTI_TOOL_STATE_CONFIGURED
+            ]
+        );
         $this->add_base_condition_sql($wheresql, $params);
 
         $this->set_downloadable(false, get_string('pluginname', 'mod_lti'));
@@ -76,6 +103,10 @@ class course_external_tools_list extends system_report {
      */
     protected function can_view(): bool {
         return has_capability('mod/lti:addpreconfiguredinstance', $this->get_context());
+    }
+
+    public function row_callback(\stdClass $row): void {
+        $this->perrowtoolusage = $row->toolusage;
     }
 
     /**
@@ -96,12 +127,8 @@ class course_external_tools_list extends system_report {
 
         $this->add_columns_from_entities($columns);
 
-        // Tool usage column using a custom SQL subquery to count tool instances within the course.
+        // Tool usage column using a custom SQL subquery (defined in initialise method) to count tool instances within the course.
         // TODO: This should be replaced with proper column aggregation once that's added to system_report instances in MDL-76392.
-        $ti = database::generate_param_name(); // Tool instance param.
-        $sql = "(SELECT COUNT($ti.id)
-                FROM {lti} $ti
-                WHERE $ti.typeid = {$entitymainalias}.id)";
         $this->add_column(new column(
             'usage',
             new \lang_string('usage', 'mod_lti'),
@@ -109,7 +136,56 @@ class course_external_tools_list extends system_report {
         ))
             ->set_type(column::TYPE_INTEGER)
             ->set_is_sortable(true)
-            ->add_field($sql, 'usage');
+            ->add_field("{$entitymainalias}.id")
+            ->add_callback(fn() => $this->perrowtoolusage);
+
+        // Enable toggle column.
+        $this->add_column((new column(
+            'showinactivitychooser',
+            new \lang_string('showinactivitychooser', 'mod_lti'),
+            $tooltypesentity->get_entity_name()
+        ))
+            // Site tools can be overridden on course level.
+            ->add_join("LEFT JOIN {lti_coursevisible} lc ON lc.typeid = {$entitymainalias}.id AND lc.courseid = " . $this->course->id)
+            ->set_type(column::TYPE_INTEGER)
+            ->add_fields("{$entitymainalias}.id, {$entitymainalias}.coursevisible, lc.coursevisible as coursevisibleoverridden")
+            ->set_is_sortable(false)
+            ->set_callback(function(int $id, \stdClass $row): string {
+                global $PAGE;
+                $coursevisible = $row->coursevisible;
+                $courseid = $this->course->id;
+                if (!empty($row->coursevisibleoverridden)) {
+                    $coursevisible = $row->coursevisibleoverridden;
+                }
+
+                if ($coursevisible == LTI_COURSEVISIBLE_ACTIVITYCHOOSER) {
+                    $coursevisible = true;
+                } else {
+                    $coursevisible = false;
+                }
+
+                $renderer = $PAGE->get_renderer('core_reportbuilder');
+                $attributes = [
+                    ['name' => 'id', 'value' => $row->id],
+                    ['name' => 'courseid', 'value' => $courseid],
+                    ['name' => 'action', 'value' => 'showinactivitychooser-toggle'],
+                    ['name' => 'state', 'value' => $coursevisible],
+                ];
+                $label = $coursevisible ? get_string('dontshowinactivitychooser', 'mod_lti')
+                    : get_string('showinactivitychooser', 'mod_lti');
+
+                $disabled = !has_capability('mod/lti:addcoursetool', \context_course::instance($courseid));
+
+                return $renderer->render_from_template('core/toggle', [
+                    'id' => 'showinactivitychooser-toggle-' . $row->id,
+                    'checked' => $coursevisible,
+                    'disabled' => $disabled,
+                    'dataattributes' => $attributes,
+                    'label' => $label,
+                    'labelclasses' => 'sr-only'
+                ]);
+            })
+        );
 
         // Attempt to create a dummy actions column, working around the limitations of the official actions feature.
         $this->add_column(new column(
@@ -119,14 +195,14 @@ class course_external_tools_list extends system_report {
             ->set_type(column::TYPE_TEXT)
             ->set_is_sortable(false)
             ->add_fields("{$entitymainalias}.id, {$entitymainalias}.course, {$entitymainalias}.name")
-            ->add_callback(static function($field, $row) {
+            ->add_callback(function($field, $row) {
                 global $OUTPUT;
 
                 // Lock actions for site-level preconfigured tools.
                 if (get_site()->id == $row->course) {
                     return \html_writer::div(
                         \html_writer::div(
-                            $OUTPUT->pix_icon('t/locked', get_string('sitetoolnocourseediting', 'mod_lti')
+                            $OUTPUT->pix_icon('t/locked', get_string('courseexternaltoolsnoeditpermissions', 'mod_lti')
                         ), 'tool-action-icon-container'), 'd-flex justify-content-end'
                     );
                 }
@@ -135,7 +211,7 @@ class course_external_tools_list extends system_report {
                 if (!has_capability('mod/lti:addcoursetool', \context_course::instance($row->course))) {
                     return \html_writer::div(
                         \html_writer::div(
-                            $OUTPUT->pix_icon('t/locked', get_string('courseexternaltoolsnoaddpermissions', 'mod_lti')
+                            $OUTPUT->pix_icon('t/locked', get_string('courseexternaltoolsnoeditpermissions', 'mod_lti')
                         ), 'tool-action-icon-container'), 'd-flex justify-content-end'
                     );
                 }
@@ -160,7 +236,8 @@ class course_external_tools_list extends system_report {
                     [
                         'data-action' => 'course-tool-delete',
                         'data-course-tool-id' => $row->id,
-                        'data-course-tool-name' => $row->name
+                        'data-course-tool-name' => $row->name,
+                        'data-course-tool-usage' => $this->perrowtoolusage
                     ],
                 ));
 

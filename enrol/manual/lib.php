@@ -173,6 +173,9 @@ class enrol_manual_plugin extends enrol_plugin {
                 }
             }
         }
+
+        $data->notifyall = $data->expirynotify == 2 ? 1 : 0;
+
         return parent::update_instance($instance, $data);
     }
 
@@ -643,6 +646,35 @@ class enrol_manual_plugin extends enrol_plugin {
         return $errors;
     }
 
+    /**
+     * Check if enrolment plugin is supported in csv course upload.
+     *
+     * @return bool
+     */
+    public function is_csv_upload_supported(): bool {
+        return true;
+    }
+
+    /**
+     * Finds matching instances for a given course.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @return stdClass|null Matching instance
+     */
+    public function find_instance(array $enrolmentdata, int $courseid) : ?stdClass {
+
+        $instances = enrol_get_instances($courseid, false);
+        $instance = null;
+        foreach ($instances as $i) {
+            if ($i->enrol == 'manual') {
+                // There can be only one manual enrol instance so find first available.
+                $instance = $i;
+                break;
+            }
+        }
+        return $instance;
+    }
 }
 
 /**

@@ -688,6 +688,12 @@ class theme_config {
     public $haseditswitch = false;
 
     /**
+     * Allows a theme to customise primary navigation by specifying the list of items to remove.
+     * @var array
+     */
+    public $removedprimarynavitems = [];
+
+    /**
      * Load the config.php file for a particular theme, and return an instance
      * of this class. (That is, this is a factory method.)
      *
@@ -757,6 +763,7 @@ class theme_config {
             $baseconfig = $config;
         }
 
+        // Ensure that each of the configurable properties defined below are also defined at the class level.
         $configurable = [
             'parents', 'sheets', 'parents_exclude_sheets', 'plugins_exclude_sheets', 'usefallback',
             'javascripts', 'javascripts_footer', 'parents_exclude_javascripts',
@@ -1591,7 +1598,7 @@ class theme_config {
 
         // Getting all the candidate functions.
         $candidates = array();
-        foreach ($this->parent_configs as $parent_config) {
+        foreach (array_reverse($this->parent_configs) as $parent_config) {
             if (!isset($parent_config->extrascsscallback)) {
                 continue;
             }
@@ -1624,7 +1631,7 @@ class theme_config {
 
         // Getting all the candidate functions.
         $candidates = array();
-        foreach ($this->parent_configs as $parent_config) {
+        foreach (array_reverse($this->parent_configs) as $parent_config) {
             if (!isset($parent_config->prescsscallback)) {
                 continue;
             }
@@ -2086,8 +2093,7 @@ class theme_config {
      *
      * @param string $image name of image, may contain relative path
      * @param string $component
-     * @param bool $svg|null Should SVG images also be looked for? If null, resorts to $CFG->svgicons if that is set; falls back to
-     * auto-detection of browser support otherwise
+     * @param bool $svg|null Should SVG images also be looked for? If null, falls back to auto-detection of browser support
      * @return string full file path
      */
     public function resolve_image_location($image, $component, $svg = false) {
@@ -2244,16 +2250,10 @@ class theme_config {
      * @return bool
      */
     public function use_svg_icons() {
-        global $CFG;
         if ($this->usesvg === null) {
-
-            if (!isset($CFG->svgicons)) {
-                $this->usesvg = core_useragent::supports_svg();
-            } else {
-                // Force them on/off depending upon the setting.
-                $this->usesvg = (bool)$CFG->svgicons;
-            }
+            $this->usesvg = core_useragent::supports_svg();
         }
+
         return $this->usesvg;
     }
 

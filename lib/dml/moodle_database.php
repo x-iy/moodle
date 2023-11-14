@@ -58,7 +58,7 @@ define('SQL_QUERY_AUX_READONLY', 6);
 
 /**
  * Abstract class representing moodle database interface.
- * @link http://docs.moodle.org/dev/DML_functions
+ * @link https://moodledev.io/docs/apis/core/dml/ddl
  *
  * @package    core_dml
  * @copyright  2008 Petr Skoda (http://skodak.org)
@@ -891,6 +891,10 @@ abstract class moodle_database {
      * @return array (sql, params, type of params)
      */
     public function fix_sql_params($sql, array $params=null) {
+        global $CFG;
+
+        require_once($CFG->libdir . '/ddllib.php');
+
         $params = (array)$params; // mke null array if needed
         $allowed_types = $this->allowed_param_types();
 
@@ -974,9 +978,9 @@ abstract class moodle_database {
                 if (!array_key_exists($key, $params)) {
                     throw new dml_exception('missingkeyinsql', $key, '');
                 }
-                if (strlen($key) > 30) {
+                if (strlen($key) > xmldb_field::NAME_MAX_LENGTH) {
                     throw new coding_exception(
-                            "Placeholder names must be 30 characters or shorter. '" .
+                            "Placeholder names must be " . xmldb_field::NAME_MAX_LENGTH . " characters or shorter. '" .
                             $key . "' is too long.", $sql);
                 }
                 $finalparams[$key] = $params[$key];

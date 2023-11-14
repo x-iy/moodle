@@ -16,16 +16,22 @@
 
 namespace core_question\local\statistics;
 
+defined('MOODLE_INTERNAL') || die();
+
 use advanced_testcase;
 use context;
 use context_module;
 use core_question\statistics\questions\all_calculated_for_qubaid_condition;
+use quiz_statistics\tests\statistics_helper;
 use core_question_generator;
 use Generator;
 use mod_quiz\quiz_attempt;
 use mod_quiz\quiz_settings;
 use question_engine;
 use ReflectionMethod;
+
+global $CFG;
+require_once($CFG->dirroot . '/mod/quiz/tests/quiz_question_helper_test_trait.php');
 
 /**
  * Tests for question statistics.
@@ -36,6 +42,8 @@ use ReflectionMethod;
  * @covers \core_question\local\statistics\statistics_bulk_loader
  */
 class statistics_bulk_loader_test extends advanced_testcase {
+
+    use \quiz_question_helper_test_trait;
 
     /** @var float Delta used when comparing statistics values out-of 1. */
     protected const DELTA = 0.00005;
@@ -111,7 +119,7 @@ class statistics_bulk_loader_test extends advanced_testcase {
         $this->assertEquals((object) ['component' => 'mod_quiz', 'contextid' => $quiz2context->id], $q2places[0]);
 
         // Add a random question to quiz3.
-        quiz_add_random_questions($quiz3, 0, $cat->id, 1, false);
+        $this->add_random_questions($quiz3->id, 0, $cat->id, 1, false);
         $this->submit_quiz($quiz3, [1 => ['answer' => 'willbewrong']]);
 
         // Quiz 3 will now be in one of these arrays.
@@ -249,8 +257,7 @@ class statistics_bulk_loader_test extends advanced_testcase {
 
         // Calculate the statistics.
         $this->expectOutputRegex('~.*Calculations completed.*~');
-        $statisticstask = new \quiz_statistics\task\recalculate();
-        $statisticstask->execute();
+        statistics_helper::run_pending_recalculation_tasks();
 
         return [$quiz1, $quiz2, $questions];
     }

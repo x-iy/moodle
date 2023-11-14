@@ -1672,11 +1672,14 @@ function calendar_get_events_by_id($eventids) {
 /**
  * Get control options for calendar.
  *
+ * @deprecated since Moodle 4.3
  * @param string $type of calendar
  * @param array $data calendar information
- * @return string $content return available control for the calender in html
+ * @return string $content return available control for the calendar in html
  */
 function calendar_top_controls($type, $data) {
+    debugging(__FUNCTION__ . ' has been deprecated and should not be used anymore.', DEBUG_DEVELOPER);
+
     global $PAGE, $OUTPUT;
 
     // Get the calendar type we are using.
@@ -1933,6 +1936,7 @@ function calendar_get_link_href($linkbase, $d, $m, $y, $time = 0) {
 /**
  * Build and return a previous month HTML link, with an arrow.
  *
+ * @deprecated since Moodle 4.3
  * @param string $text The text label.
  * @param string|moodle_url $linkbase The URL stub.
  * @param int $d The number of the date.
@@ -1944,6 +1948,8 @@ function calendar_get_link_href($linkbase, $d, $m, $y, $time = 0) {
  * @return string HTML string.
  */
 function calendar_get_link_previous($text, $linkbase, $d, $m, $y, $accesshide = false, $time = 0) {
+    debugging(__FUNCTION__ . ' has been deprecated and should not be used anymore.', DEBUG_DEVELOPER);
+
     $href = calendar_get_link_href(new \moodle_url($linkbase), $d, $m, $y, $time);
 
     if (empty($href)) {
@@ -1961,6 +1967,7 @@ function calendar_get_link_previous($text, $linkbase, $d, $m, $y, $accesshide = 
 /**
  * Build and return a next month HTML link, with an arrow.
  *
+ * @deprecated since Moodle 4.3
  * @param string $text The text label.
  * @param string|moodle_url $linkbase The URL stub.
  * @param int $d the number of the Day
@@ -1972,6 +1979,8 @@ function calendar_get_link_previous($text, $linkbase, $d, $m, $y, $accesshide = 
  * @return string HTML string.
  */
 function calendar_get_link_next($text, $linkbase, $d, $m, $y, $accesshide = false, $time = 0) {
+    debugging(__FUNCTION__ . ' has been deprecated and should not be used anymore.', DEBUG_DEVELOPER);
+
     $href = calendar_get_link_href(new \moodle_url($linkbase), $d, $m, $y, $time);
 
     if (empty($href)) {

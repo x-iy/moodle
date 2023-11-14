@@ -243,7 +243,7 @@ class core_user {
         }
 
         // Start building the WHERE clause based on name.
-        list ($where, $whereparams) = users_search_sql($query, 'u', false);
+        list ($where, $whereparams) = users_search_sql($query, 'u');
 
         // We allow users to search with extra identity fields (as well as name) but only if they
         // have the permission to display those identity fields.
@@ -979,6 +979,60 @@ class core_user {
             'permissioncallback' => function($user, $preferencename) {
                 return self::is_current_user($user) && has_capability('moodle/blog:view', context_system::instance());
             });
+        $preferences['filemanager_recentviewmode'] = [
+            'type' => PARAM_INT,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => 1,
+            'choices' => [1, 2, 3],
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['filepicker_recentrepository'] = [
+            'type' => PARAM_INT,
+            'null' => NULL_NOT_ALLOWED,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['filepicker_recentlicense'] = [
+            'type' => PARAM_SAFEDIR,
+            'null' => NULL_NOT_ALLOWED,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['filepicker_recentviewmode'] = [
+            'type' => PARAM_INT,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => 1,
+            'choices' => [1, 2, 3],
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['userselector_optionscollapsed'] = [
+            'type' => PARAM_BOOL,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => true,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['userselector_autoselectunique'] = [
+            'type' => PARAM_BOOL,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => false,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['userselector_preserveselected'] = [
+            'type' => PARAM_BOOL,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => false,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['userselector_searchtype'] = [
+            'type' => PARAM_INT,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => USER_SEARCH_STARTS_WITH,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
+        $preferences['question_bank_advanced_search'] = [
+            'type' => PARAM_BOOL,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => false,
+            'permissioncallback' => [static::class, 'is_current_user'],
+        ];
 
         $choices = [HOMEPAGE_SITE];
         if (!empty($CFG->enabledashboard)) {
@@ -1410,6 +1464,34 @@ class core_user {
 
         // Return the user picture.
         return $userpicture;
+    }
+
+    /**
+     * Get initials for users
+     *
+     * @param stdClass $user
+     * @return string
+     */
+    public static function get_initials(stdClass $user): string {
+        // Get the available name fields.
+        $namefields = \core_user\fields::get_name_fields();
+        // Build a dummy user to determine the name format.
+        $dummyuser = array_combine($namefields, $namefields);
+        // Determine the name format by using fullname() and passing the dummy user.
+        $nameformat = fullname((object) $dummyuser);
+        // Fetch all the available username fields.
+        $availablefields = order_in_string($namefields, $nameformat);
+        // We only want the first and last name fields.
+        if (!empty($availablefields) && count($availablefields) >= 2) {
+            $availablefields = [reset($availablefields), end($availablefields)];
+        }
+        $initials = '';
+        foreach ($availablefields as $userfieldname) {
+            if (!empty($user->$userfieldname)) {
+                $initials .= mb_substr($user->$userfieldname, 0, 1);
+            }
+        }
+        return $initials;
     }
 
 }
