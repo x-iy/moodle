@@ -24,7 +24,7 @@ use context_system;
 use core_collator;
 use core_component;
 use core_reportbuilder\local\audiences\base;
-use core_reportbuilder\local\models\audience as audience_model;
+use core_reportbuilder\local\models\{audience as audience_model, schedule};
 
 /**
  * Class containing report audience helper methods
@@ -130,8 +130,7 @@ class audience {
         }
 
         // Get all sql audiences.
-        $prefix = database::generate_param_name() . '_';
-        [$select, $params] = $DB->get_in_or_equal($allowedreports, SQL_PARAMS_NAMED, $prefix);
+        [$select, $params] = $DB->get_in_or_equal($allowedreports, SQL_PARAMS_NAMED, database::generate_param_name('_'));
         $sql = "{$reporttablealias}.id {$select}";
 
         return [$sql, $params];
@@ -182,15 +181,21 @@ class audience {
 
         // If user can't view all reports, limit the returned list to those reports they can see.
         if (!has_capability('moodle/reportbuilder:editall', $context, $userid)) {
-            $reports = self::user_reports_list($userid);
 
-            [$paramprefix, $paramuserid] = database::generate_param_names(2);
-            [$reportselect, $params] = $DB->get_in_or_equal($reports, SQL_PARAMS_NAMED, "{$paramprefix}_", true, null);
+            // Select all reports accessible to the user based on audience.
+            [$reportselect, $params] = $DB->get_in_or_equal(
+                self::user_reports_list($userid),
+                SQL_PARAMS_NAMED,
+                database::generate_param_name('_'),
+                true,
+                null,
+            );
 
             $where = "{$reporttablealias}.id {$reportselect}";
 
             // User can also see any reports that they can edit.
             if (has_capability('moodle/reportbuilder:edit', $context, $userid)) {
+                $paramuserid = database::generate_param_name();
                 $where = "({$reporttablealias}.usercreated = :{$paramuserid} OR {$where})";
                 $params[$paramuserid] = $userid ?? $USER->id;
             }
@@ -227,6 +232,25 @@ class audience {
         }
 
         return [$wheres, $params];
+    }
+
+    /**
+     * Return a list of audiences that are used by any schedule of the given report
+     *
+     * @param int $reportid
+     * @return int[] Array of audience IDs
+     */
+    public static function get_audiences_for_report_schedules(int $reportid): array {
+        global $DB;
+
+        $audiences = $DB->get_fieldset_select(schedule::TABLE, 'audiences', 'reportid = ?', [$reportid]);
+
+        // Reduce JSON encoded audience data of each schedule to an array of audience IDs.
+        $audienceids = array_reduce($audiences, static function(array $carry, string $audience): array {
+            return array_merge($carry, (array) json_decode($audience));
+        }, []);
+
+        return array_unique($audienceids, SORT_NUMERIC);
     }
 
     /**

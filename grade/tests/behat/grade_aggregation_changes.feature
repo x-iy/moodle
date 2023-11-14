@@ -34,8 +34,7 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I change window size to "large"
     And I set the following administration settings values:
       | grade_aggregations_visible | Mean of grades,Weighted mean of grades,Simple weighted mean of grades,Mean of grades (with extra credits),Median of grades,Lowest grade,Highest grade,Mode of grades,Natural |
-    And I am on "Course 1" course homepage
-    And I navigate to "View > Grader report" in the course gradebook
+    And I am on the "Course 1" "grades > Grader report > View" page
     And I turn editing mode on
     And I click on grade item menu "Cat mean" of type "category" on "grader" page
     And I choose "Edit category" in the open action menu
@@ -424,8 +423,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I should not see "Cat natural &amp;" in the "select#menumoveafter" "css_element"
-    When I select "Cat natural &" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat natural &" "list_item" in the "Move items" "dialogue"
+    When I click on "Move" "button" in the "Move items" "dialogue"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
@@ -455,7 +455,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I select "Cat ec" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat ec" "list_item" in the "Move items" "dialogue"
+    And I click on "Move" "button" in the "Move items" "dialogue"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
@@ -479,7 +481,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I select "Cat simple" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat simple" "list_item" in the "Move items" "dialogue"
+    And I click on "Move" "button" in the "Move items" "dialogue"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
@@ -503,7 +507,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I select "Cat weighted" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat weighted" "list_item" in the "Move items" "dialogue"
+    And I click on "Move" "button" in the "Move items" "dialogue"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu
@@ -531,7 +537,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I select "Cat weighted2" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat weighted2" "list_item" in the "Move items" "dialogue"
+    And I click on "Move" "button" in the "Move items" "dialogue"
     And I wait "2" seconds
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
@@ -556,7 +564,9 @@ Feature: Changing the aggregation of an item affects its weight and extra credit
     And I set the field "Select Item a2" to "1"
     And I set the field "Select Item a3" to "1"
     And I set the field "Select Item a4" to "1"
-    And I select "Course 1" from the "Move selected items to" singleselect
+    And I click on "Move" "button" in the "sticky-footer" "region"
+    And I click on "Cat natural &" "list_item" in the "Move items" "dialogue"
+    And I click on "Move" "button" in the "Move items" "dialogue"
     And I navigate to "View > Grader report" in the course gradebook
     And I click on grade item menu "Item a1" of type "gradeitem" on "grader" page
     And I choose "Edit grade item" in the open action menu

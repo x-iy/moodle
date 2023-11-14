@@ -195,7 +195,7 @@ class core_shutdown_manager {
      * Standard shutdown sequence.
      */
     protected static function request_shutdown() {
-        global $CFG;
+        global $CFG, $OUTPUT, $PERF;
 
         // Help apache server if possible.
         $apachereleasemem = false;
@@ -216,6 +216,10 @@ class core_shutdown_manager {
                 $perf = get_performance_info();
                 error_log("PERF: " . $perf['txt']);
             }
+            if (!empty($PERF->perfdebugdeferred)) {
+                $perf = get_performance_info();
+                echo $OUTPUT->select_element_for_replace('#perfdebugfooter', $perf['html']);
+            }
             if (MDL_PERFINC) {
                 $inc = get_included_files();
                 $ts  = 0;
@@ -234,6 +238,16 @@ class core_shutdown_manager {
                     error_log("Total size of files included: $ts ($hts)");
                 }
             }
+        }
+
+        // Close the current streaming element if any.
+        if ($OUTPUT->has_started()) {
+            echo $OUTPUT->close_element_for_append();
+        }
+
+        // Print any closing buffered tags.
+        if (!empty($CFG->closingtags)) {
+            echo $CFG->closingtags;
         }
     }
 }

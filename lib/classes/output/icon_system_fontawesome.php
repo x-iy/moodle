@@ -324,6 +324,7 @@ class icon_system_fontawesome extends icon_system_font {
             'core:i/section' => 'fa-folder-o',
             'core:i/sendmessage' => 'fa-paper-plane',
             'core:i/settings' => 'fa-cog',
+            'core:i/share' => 'fa-share-square-o',
             'core:i/show' => 'fa-eye-slash',
             'core:i/siteevent' => 'fa-globe',
             'core:i/star' => 'fa-star',
@@ -351,6 +352,10 @@ class icon_system_fontawesome extends icon_system_font {
             'core:m/USD' => 'fa-usd',
             'core:t/addcontact' => 'fa-address-card',
             'core:t/add' => 'fa-plus',
+            'core:t/angles-down' => 'fa-angles-down',
+            'core:t/angles-left' => 'fa-angles-left',
+            'core:t/angles-right' => 'fa-angles-right',
+            'core:t/angles-up' => 'fa-angles-up',
             'core:t/approve' => 'fa-thumbs-up',
             'core:t/assignroles' => 'fa-user-circle',
             'core:t/award' => 'fa-trophy',
@@ -501,8 +506,9 @@ class icon_system_fontawesome extends icon_system_font {
             $data['aria-hidden'] = $icon->attributes['aria-hidden'];
         }
 
-        // Flipping help icon direction in right-to-left languages.
-        if (right_to_left() && $data['key'] == "fa-question-circle text-info") {
+        // Flip question mark icon orientation when the `questioniconfollowlangdirection` lang config string is set to `yes`.
+        $isquestionicon = strpos($data['key'], 'fa-question') !== false;
+        if ($isquestionicon && right_to_left() && get_string('questioniconfollowlangdirection', 'langconfig') === 'yes') {
             $data['extraclasses'] = "fa-flip-horizontal";
         }
 

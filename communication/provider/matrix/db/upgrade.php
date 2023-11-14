@@ -38,10 +38,21 @@ function xmldb_communication_matrix_upgrade($oldversion) {
         if (!$dbman->field_exists($table, $field)) {
             $dbman->add_field($table, $field);
         }
+
         // Plugin savepoint reached.
         upgrade_plugin_savepoint(true, 2023060101, 'communication', 'matrix');
     }
 
-    return true;
+    if ($oldversion < 2023071900) {
+        $table = new xmldb_table('matrix_rooms');
+        $dbman->rename_table($table, 'matrix_room');
 
+        // Plugin savepoint reached.
+        upgrade_plugin_savepoint(true, 2023071900, 'communication', 'matrix');
+    }
+
+    // Automatically generated Moodle v4.3.0 release upgrade line.
+    // Put any upgrade step following this.
+
+    return true;
 }

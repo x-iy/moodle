@@ -70,3 +70,37 @@ Feature: Course page activities completion
     And I am on the "Course 1" course page
     And "To do" "button" should not exist in the "Activity sample" "activity"
     And the "View" item should exist in the "Done" dropdown of the "Activity sample" "activity"
+
+  Scenario: Teacher can edit activity completion using completion dialog link
+    Given the following "activity" exists:
+        | activity       | assign          |
+        | name           | Activity sample |
+        | course         | C1              |
+        | completion     | 2               |
+        | completionview | 1               |
+    When I am on the "C1" "Course" page logged in as "teacher1"
+    # Edit conditions link should not be displayed when editing mode is off.
+    Then "Edit conditions" "link" should not exist in the "Activity sample" "core_courseformat > Activity completion"
+    # Edit conditions link should be displayed when editing mode is on.
+    But I am on "C1" course homepage with editing mode on
+    And I click on "Edit conditions" "link" in the "Activity sample" "core_courseformat > Activity completion"
+    And I should see "Activity sample" in the "page-header" "region"
+    And I should see "Updating: Assignment"
+    And I should see "Activity completion"
+
+  Scenario: Completion dialog shows warning message if there are no criterias
+    # Create an activity with automatic completion but without completion criterias.
+    Given the following "activity" exists:
+      | activity       | assign          |
+      | name           | Activity sample |
+      | course         | C1              |
+      | completion     | 2               |
+    # Teacher view.
+    When I am on the "C1" "Course" page logged in as "teacher1"
+    And I turn editing mode on
+    And "You have to add at least one completion condition." "text" should exist in the "Activity sample" "core_courseformat > Activity completion"
+    And "Add conditions" "link" should exist in the "Activity sample" "core_courseformat > Activity completion"
+    And I log out
+    # Student view.
+    And I am on the "C1" "Course" page logged in as "student1"
+    And "There are no completion conditions set for this activity." "text" should exist in the "Activity sample" "core_courseformat > Activity completion"

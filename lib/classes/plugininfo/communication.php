@@ -17,6 +17,7 @@
 namespace core\plugininfo;
 
 use admin_settingpage;
+use core_communication\processor;
 use core_plugin_manager;
 use moodle_url;
 
@@ -29,7 +30,11 @@ use moodle_url;
  */
 class communication extends base {
 
-    public static function get_manage_url(): moodle_url {
+    public static function get_manage_url(): ?moodle_url {
+        if (!\core_communication\api::is_available()) {
+            return null;
+        }
+
         return new moodle_url('/admin/settings.php', ['section' => 'managecommunicationproviders']);
     }
 

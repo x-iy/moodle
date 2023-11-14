@@ -55,13 +55,15 @@ const selectors = {
  * Our initial hook into the module which will eventually allow us to handle the dropdown initials bar form.
  *
  * @param {String} callingLink The link to redirect upon form submission.
+ * @param {Null|Number} gpr_userid The user id to filter by.
+ * @param {Null|String} gpr_search The search value to filter by.
  */
-export const init = (callingLink) => {
+export const init = (callingLink, gpr_userid = null, gpr_search = null) => {
     if (registered) {
         return;
     }
     const pendingPromise = new Pending();
-    registerListenerEvents(callingLink);
+    registerListenerEvents(callingLink, gpr_userid, gpr_search);
     // BS events always bubble so, we need to listen for the event higher up the chain.
     $(selectors.parentDomNode).on('shown.bs.dropdown', () => {
         document.querySelector(selectors.pageClickableItem).focus({preventScroll: true});
@@ -74,8 +76,10 @@ export const init = (callingLink) => {
  * Register event listeners.
  *
  * @param {String} callingLink The link to redirect upon form submission.
+ * @param {Null|Number} gpr_userid The user id to filter by.
+ * @param {Null|String} gpr_search The search value to filter by.
  */
-const registerListenerEvents = (callingLink) => {
+const registerListenerEvents = (callingLink, gpr_userid = null, gpr_search = null) => {
     const events = [
         'click',
         CustomEvents.events.activate,
@@ -121,11 +125,16 @@ const registerListenerEvents = (callingLink) => {
                 if (e.target.dataset.action === selectors.formItems.save) {
                     // Ensure we strip out the value (All) as it messes with the PHP side of the initials bar.
                     // Then we will redirect the user back onto the page with new filters applied.
-                    window.location = Url.relativeUrl(callingLink, {
+                    const params = {
                         'id': e.target.closest(selectors.formDropdown).dataset.courseid,
+                        'gpr_search': gpr_search !== null ? gpr_search : '',
                         'sifirst': sifirst.parentElement.classList.contains('initialbarall') ? '' : sifirst.value,
                         'silast': silast.parentElement.classList.contains('initialbarall') ? '' : silast.value,
-                    });
+                    };
+                    if (gpr_userid !== null) {
+                        params.gpr_userid = gpr_userid;
+                    }
+                    window.location = Url.relativeUrl(callingLink, params);
                 }
                 if (e.target.dataset.action === selectors.formItems.cancel) {
                     $(`.${selectors.targetButton}`).dropdown('toggle');

@@ -18,18 +18,16 @@ Feature: Calculated grade items can be used in the gradebook
       | teacher1 | C1     | editingteacher |
       | student1 | C1     | student        |
       | student2 | C1     | student        |
-    And I log in as "admin"
-    And I am on "Course 1" course homepage
-    And I navigate to "Setup > Gradebook setup" in the course gradebook
+    And I am on the "Course 1" "grades > gradebook setup" page logged in as "admin"
 
   @javascript
   Scenario: The max grade for a category item, with a calculation using Natural aggregation, can be changed
-    Given I press "Add category"
+    Given I choose the "Add category" item in the "Add" action menu
     And I set the following fields to these values:
       | Category name | Calc cat |
     And I click on "Save" "button" in the "New category" "dialogue"
     And I wait until the page is ready
-    And I press "Add grade item"
+    And I choose the "Add grade item" item in the "Add" action menu
     And I set the following fields to these values:
       | Item name | grade item 1 |
       | Grade category | Calc cat |
@@ -52,13 +50,13 @@ Feature: Calculated grade items can be used in the gradebook
 
   @javascript
   Scenario: Changing max grade for a category item with a calculation that has existing grades will display the same points with the new max grade values immediately.
-    Given I press "Add category"
+    Given I choose the "Add category" item in the "Add" action menu
     And I set the following fields to these values:
       | Category name | Calc cat |
     And I click on "Save" "button" in the "New category" "dialogue"
     And I wait until the page is ready
     And I should not see "Calculated grade" in the "Calc cat" "table_row"
-    And I press "Add grade item"
+    And I choose the "Add grade item" item in the "Add" action menu
     And I set the following fields to these values:
       | Item name | grade item 1 |
       | Grade category | Calc cat |
@@ -118,11 +116,11 @@ Feature: Calculated grade items can be used in the gradebook
 
   @javascript
   Scenario: Values in calculated grade items are not always out of one hundred
-    Given I press "Add grade item"
+    Given I choose the "Add grade item" item in the "Add" action menu
     And I set the following fields to these values:
       | Item name | grade item 1 |
     And I click on "Save" "button" in the "New grade item" "dialogue"
-    And I press "Add grade item"
+    And I choose the "Add grade item" item in the "Add" action menu
     And I set the following fields to these values:
       | Item name | calc item |
     And I click on "Save" "button" in the "New grade item" "dialogue"

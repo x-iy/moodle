@@ -2162,9 +2162,10 @@ abstract class enrol_plugin {
         // Add users to a communication room.
         if (core_communication\api::is_available()) {
             $communication = \core_communication\api::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $courseid
+                context: $context,
+                component: 'core_course',
+                instancetype: 'coursecommunication',
+                instanceid: $courseid,
             );
             $communication->add_members_to_room([$userid]);
         }
@@ -2231,10 +2232,12 @@ abstract class enrol_plugin {
         // Add/remove users to/from communication room.
         if (core_communication\api::is_available()) {
             $course = enrol_get_course_by_user_enrolment_id($ue->id);
+            $context = \core\context\course::instance($course->id);
             $communication = \core_communication\api::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $course->id
+                context: $context,
+                component: 'core_course',
+                instancetype: 'coursecommunication',
+                instanceid: $course->id,
             );
             if (($statusmodified && ((int) $ue->status === 1)) ||
                     ($timeendmodified && $ue->timeend !== 0 && (time() > $ue->timeend))) {
@@ -2350,9 +2353,10 @@ abstract class enrol_plugin {
         // Remove users from a communication room.
         if (core_communication\api::is_available()) {
             $communication = \core_communication\api::load_by_instance(
-                'core_course',
-                'coursecommunication',
-                $courseid
+                context: $context,
+                component: 'core_course',
+                instancetype: 'coursecommunication',
+                instanceid: $courseid,
             );
             $communication->remove_members_from_room([$userid]);
         }
@@ -2674,6 +2678,30 @@ abstract class enrol_plugin {
     }
 
     /**
+     * Add new instance of enrol plugin with custom settings,
+     * called when adding new instance manually or when adding new course.
+     * Used for example on course upload.
+     *
+     * Not all plugins support this.
+     *
+     * @param stdClass $course Course object
+     * @param array|null $fields instance fields
+     * @return int|null id of new instance or null if not supported
+     */
+    public function add_custom_instance(stdClass $course, ?array $fields = null): ?int {
+        return null;
+    }
+
+    /**
+     * Check if enrolment plugin is supported in csv course upload.
+     *
+     * @return bool
+     */
+    public function is_csv_upload_supported(): bool {
+        return false;
+    }
+
+    /**
      * Update instance status
      *
      * Override when plugin needs to do some action when enabled or disabled.
@@ -2716,9 +2744,10 @@ abstract class enrol_plugin {
         }
 
         $communication = \core_communication\api::load_by_instance(
-            'core_course',
-            'coursecommunication',
-            $courseid
+            context: \core\context\course::instance($courseid),
+            component: 'core_course',
+            instancetype: 'coursecommunication',
+            instanceid: $courseid,
         );
 
         switch ($action) {
@@ -3460,7 +3489,14 @@ abstract class enrol_plugin {
      * @return array Errors
      */
     public function validate_enrol_plugin_data(array $enrolmentdata, ?int $courseid = null) : array {
-        return [];
+        $errors = [];
+        if (!$this->is_csv_upload_supported()) {
+            $errors['errorunsupportedmethod'] =
+                new lang_string('errorunsupportedmethod', 'tool_uploadcourse',
+                    get_class($this));
+
+        }
+        return $errors;
     }
 
     /**
@@ -3474,4 +3510,17 @@ abstract class enrol_plugin {
         return null;
     }
 
+    /**
+     * Finds matching instances for a given course.
+     *
+     * @param array $enrolmentdata enrolment data.
+     * @param int $courseid Course ID.
+     * @return stdClass|null Matching instance
+     */
+    public function find_instance(array $enrolmentdata, int $courseid) : ?stdClass {
+
+        // By default, we assume we can't uniquely identify an instance so better not update any.
+        // Plugins can override this if they can uniquely identify an instance.
+        return null;
+    }
 }

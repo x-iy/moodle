@@ -146,9 +146,10 @@ M.core_availability.form = {
             this.updateRestrictByGroup();
         }
 
-        // Everything is ready. Make sure the div is visible.
+        // Everything is ready. Make sure the div is visible and hide the loading indicator.
         this.parent = Y.one('#fitem_id_availabilityconditionsjson');
         this.parent.removeClass('d-none');
+        document.getElementById('availabilityconditions-loading').remove();
     },
 
     /**
@@ -583,7 +584,7 @@ M.core_availability.List.prototype.renumber = function(parentNumber) {
     }
     var heading = M.util.get_string('setheading', 'availability', headingParams);
     this.node.one('> h3').set('innerHTML', heading);
-
+    this.node.one('> h3').getDOMNode().dataset.restrictionOrder = parentNumber ? parentNumber : 'root';
     // Do children.
     for (var i = 0; i < this.children.length; i++) {
         var child = this.children[i];
@@ -1077,6 +1078,7 @@ M.core_availability.Item.prototype.renumber = function(number) {
     headingParams.number = number + ':';
     var heading = M.util.get_string('itemheading', 'availability', headingParams);
     this.node.one('> h3').set('innerHTML', heading);
+    this.node.one('> h3').getDOMNode().dataset.restrictionOrder = number ? number : 'root';
 };
 
 /**
