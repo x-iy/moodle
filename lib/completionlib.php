@@ -991,11 +991,12 @@ class completion_info {
      *   this one activity
      * @param int $userid User ID or 0 (default) for current user
      * @param mixed $unused This parameter has been deprecated since 4.0 and should not be used anymore.
+     * @param bool $customdata If false (default true) don't retrieve custom info when not necessary.
      * @return object Completion data. Record from course_modules_completion plus other completion statuses such as
      *                  - Completion status for 'must-receive-grade' completion rule.
      *                  - Custom completion statuses defined by the activity module plugin.
      */
-    public function get_data($cm, $wholecourse = false, $userid = 0, $unused = null) {
+    public function get_data($cm, $wholecourse = false, $userid = 0, $unused = null, $customdata = true) {
         global $USER, $DB;
 
         if ($unused !== null) {
@@ -1113,8 +1114,10 @@ class completion_info {
         }
 
         // Fill the other completion data for this user in this module instance.
-        $data += $this->get_other_cm_completion_data($cminfo, $userid);
-        $data['other_cm_completion_data_fetched'] = true;
+        if ($customdata) {
+            $data += $this->get_other_cm_completion_data($cminfo, $userid);
+            $data['other_cm_completion_data_fetched'] = true;
+        }
 
         // Put in cache
         $cacheddata[$cminfo->id] = $data;
