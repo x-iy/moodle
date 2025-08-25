@@ -826,6 +826,21 @@ class grade_category extends grade_object {
 
         $this->set_usedinaggregation($userid, $usedweights, $novalue, $dropped, $extracredit);
 
+        // Allow plugins to read the exact aggregation inputs and result, and perform
+        // alternate calculations (e.g. preview the total grade without penalties).
+        $hook = new core_grades\hook\after_category_aggregation_calculated(
+            $grade_values,
+            $allvalues,
+            $items,
+            $usedweights,
+            $grademinoverrides,
+            $grademaxoverrides,
+            $userid,
+            $this,
+            $grade
+        );
+        \core\di::get(\core\hook\manager::class)->dispatch($hook);
+
         return;
     }
 

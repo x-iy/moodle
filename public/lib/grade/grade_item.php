@@ -1995,11 +1995,23 @@ class grade_item extends grade_object {
      *            'itemid' => 2
      *        ];
      * @param bool $isbulkupdate If bulk grade update is happening.
+     * @param float $deductedmark Mark deducted from final grade.
      * @return bool success
      */
-    public function update_raw_grade($userid, $rawgrade = false, $source = null, $feedback = false,
-            $feedbackformat = FORMAT_MOODLE, $usermodified = null, $dategraded = null, $datesubmitted=null,
-            $grade = null, array $feedbackfiles = [], $isbulkupdate = false) {
+    public function update_raw_grade(
+        $userid,
+        $rawgrade = false,
+        $source = null,
+        $feedback = false,
+        $feedbackformat = FORMAT_MOODLE,
+        $usermodified = null,
+        $dategraded = null,
+        $datesubmitted = null,
+        $grade = null,
+        array $feedbackfiles = [],
+        $isbulkupdate = false,
+        $deductedmark = 0
+    ) {
         global $USER;
 
         $result = true;
@@ -2097,13 +2109,9 @@ class grade_item extends grade_object {
         }
         // end of hack alert
 
-        // Only reset the deducted mark if the grade has changed.
-        if ($grade->timemodified !== $oldgrade->timemodified) {
-            $grade->deductedmark = 0;
-        }
-
         $gradechanged = false;
         if (empty($grade->id)) {
+            $grade->deductedmark = $deductedmark;
             $result = (bool)$grade->insert($source, $isbulkupdate);
 
             // If the grade insert was successful and the final grade was not null then trigger a user_graded event.
@@ -2120,6 +2128,7 @@ class grade_item extends grade_object {
                     or grade_floats_different($grade->rawgrademax, $oldgrade->rawgrademax)
                     or $grade->rawscaleid != $oldgrade->rawscaleid) {
                 $gradechanged = true;
+                $grade->deductedmark = $deductedmark;
             }
 
             // The timecreated and timemodified checking is part of the hack above.
@@ -2167,7 +2176,9 @@ class grade_item extends grade_object {
      *
      * @param int $userid The graded user
      * @param float $deductedmark The mark deducted from final grade
+     * @deprecated since 5.2
      */
+    #[\core\attribute\deprecated(replacement: null, since: '5.2', mdl: 'MDL-86394')]
     public function update_deducted_mark(int $userid, float $deductedmark): void {
         $grade = new grade_grade([
                 'itemid' => $this->id,

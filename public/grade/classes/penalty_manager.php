@@ -232,8 +232,20 @@ class penalty_manager {
         // Update the grade if not in preview mode.
         if (!$previewonly) {
             // Update the raw grade and store the deducted mark.
-            $gradeitem->update_raw_grade($userid, $container->get_grade_after_penalties(), 'gradepenalty');
-            $gradeitem->update_deducted_mark($userid, $container->get_penalty());
+            $gradeitem->update_raw_grade(
+                $userid,
+                $container->get_grade_after_penalties(),
+                'gradepenalty',
+                false,
+                FORMAT_MOODLE,
+                null,
+                null,
+                null,
+                null,
+                [],
+                false,
+                $container->get_penalty()
+            );
         }
 
         return $container;
